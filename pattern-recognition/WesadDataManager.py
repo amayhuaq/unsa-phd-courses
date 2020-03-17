@@ -26,6 +26,12 @@ list_functions = {
 WRIST = 'w'
 CHEST = 'c'
 
+sensor_keys = {
+    CHEST: ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp'],
+    WRIST: ['ACC', 'BVP', 'EDA', 'TEMP']
+}
+
+
 def plot_signals_from_df(data, signal='label'):
     fig = plt.figure()
     for subj, vals in data.items():
@@ -39,8 +45,6 @@ class SubjectData:
     def __init__(self, path, subject):
         self.id = subject
         self.signal_data = {}
-        self.chest_sensor_keys = ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp']
-        self.wrist_sensor_keys = ['ACC', 'BVP', 'EDA', 'TEMP']
         with open(subject + '/' + subject + '.pkl', 'rb') as file:
             data = pickle.load(file, encoding='latin1')
         self.labels = data['label']
@@ -83,9 +87,10 @@ class WesadDataManager:
         for i in list_subjects:
             self.load_data_one_subject('S' + str(i))
 
-    def extract_basic_features(self, obj, source=WRIST, window_size=1, shift=1):
+    def extract_basic_features(self, obj, source=WRIST, window_size=1, shift=1, id_features=[]):
         cfeatures = pd.DataFrame({})
-        for key2, signal in obj.signal_data[source].items():
+        for key2 in id_features:
+            signal = obj.signal_data[source][key2]
             res = list_functions[key2](signal, devices_sampling[source][key2], window_size, shift)
             fex.print_obj_len(res, key2)
             # creating dataframe
@@ -98,10 +103,12 @@ class WesadDataManager:
                 cfeatures = cfeatures.join(df)            
         return cfeatures
         
-    def prepare_joined_data(self, source=WRIST, window_size=1, shift=1, binary=False, wfilter=True):
+    def prepare_joined_data(self, source=WRIST, window_size=1, shift=1, binary=False, wfilter=True, lfeatures=None):
         df = pd.DataFrame({})
+        if(lfeatures is None):
+            lfeatures = sensor_keys[source]
         for key, obj in self.obj_data.items():
-            features = self.extract_basic_features(obj, source, window_size, shift)
+            features = self.extract_basic_features(obj, source, window_size, shift, lfeatures)
             labels = fex.get_final_labels(obj.labels, binary=binary)
             subject = [key for i in range(len(labels))]
             features = features.join(pd.DataFrame({'subject': subject}))

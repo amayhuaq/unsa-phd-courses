@@ -21,7 +21,7 @@ if __name__ == '__main__':
     windows = [15, 30, 60, 90, 120]
     accuracies = {}
     for secs in windows:
-        features = db.prepare_joined_data(wdm.WRIST, secs, 0.25, binary=True)
+        features = db.prepare_joined_data(wdm.WRIST, secs, 0.25, binary=True, lfeatures=['BVP', 'TEMP'])#lfeatures=['ACC', 'BVP', 'EDA', 'TEMP'])
             
         #print ('=== FEATURES ===')
         #print(features)
@@ -34,6 +34,7 @@ if __name__ == '__main__':
         for sid in wdm.list_subjects:
             test_data = features[features['subject'] == 'S' + str(sid)]
             train_data = features[features['subject'] != 'S' + str(sid)]
+            train_data = train_data.sample(frac=1).reset_index(drop=True)
             # separating data and labels
             ytrain = train_data['label'].tolist()
             Xtrain = train_data.drop(columns=['subject', 'label']).values.tolist()    
@@ -49,4 +50,4 @@ if __name__ == '__main__':
             accuracies[str(secs) + '_rf'].append(acrf)
     
     df = pd.DataFrame(accuracies)
-    df.to_csv('siirtola.csv')
+    df.to_csv('../siirtola.csv')
