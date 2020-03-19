@@ -3,16 +3,16 @@ import WesadDataManager as wdm
   
     
 if __name__ == '__main__':
-    db = wdm.WesadDataManager('WESAD', 'S3')
+    db = wdm.WesadDataManager('WESAD', 'S2')
     features = {'c':{}, 'w':{}}
-    features['w'] = db.prepare_joined_data(wdm.WRIST, binary=True)
-    #features['c'] = db.extract_basic_features(wdm.CHEST)
+    features['w'] = db.prepare_joined_data(wdm.WRIST, binary=True, window_size=15, lfeatures=['BVP'])
+    #☻features['c'] = db.prepare_joined_data(wdm.CHEST, binary=True, lfeatures=['Resp'])
         
-    print ('=== FEATURES ===')
-    print(features['w'])
+    #print ('=== FEATURES ===')
+    #print(features['w'])
     
-    data = features['w'][features['w']['subject'] == 'S3']
-    print(data)
+    data = features['w'][features['w']['subject'] == 'S2']
+    #print(data)
     plt.plot(data['label'].tolist())
-    wdm.plot_signals_from_df(db.processed_data, 'EDA_mean')
+    wdm.plot_signals_from_df(db.processed_data, 'BVP_mean')
     

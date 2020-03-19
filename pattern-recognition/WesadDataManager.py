@@ -82,6 +82,7 @@ class WesadDataManager:
     def load_data_one_subject(self, subject):
         self.obj_data[subject] = SubjectData(self.db_path, subject)
         fex.print_obj_len(self.obj_data[subject].get_wrist_data(), subject)
+        fex.print_obj_len(self.obj_data[subject].get_chest_data(), subject)
 
     def load_data(self):
         for i in list_subjects:
