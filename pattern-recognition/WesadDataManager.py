@@ -2,6 +2,7 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
+import re
 import matplotlib.pyplot as plt
 import feature_extractor as fex
 
@@ -39,7 +40,18 @@ def plot_signals_from_df(data, signal='label'):
     plt.title('Signal graph: ' + signal)
     plt.legend()
     plt.show()
- 
+
+
+def select_columns(columns, keys):
+    # Match names.
+    selCols = []
+    for key in keys:
+        patt = re.compile("^" + key)
+        for element in columns:
+            if patt.match(element) is not None:
+                selCols.append(element)
+    return selCols
+    
     
 class SubjectData:
     def __init__(self, path, subject):
@@ -81,8 +93,9 @@ class WesadDataManager:
 
     def load_data_one_subject(self, subject):
         self.obj_data[subject] = SubjectData(self.db_path, subject)
-        fex.print_obj_len(self.obj_data[subject].get_wrist_data(), subject)
-        fex.print_obj_len(self.obj_data[subject].get_chest_data(), subject)
+        print('Loaded subject: ' + str(subject))
+        #fex.print_obj_len(self.obj_data[subject].get_wrist_data(), subject)
+        #fex.print_obj_len(self.obj_data[subject].get_chest_data(), subject)
 
     def load_data(self):
         for i in list_subjects:
@@ -109,6 +122,7 @@ class WesadDataManager:
         if(lfeatures is None):
             lfeatures = sensor_keys[source]
         for key, obj in self.obj_data.items():
+            print ('=== Subject: ' + str(key) + ' ===')
             features = self.extract_basic_features(obj, source, window_size, shift, lfeatures)
             labels = fex.get_final_labels(obj.labels, binary=binary)
             subject = [key for i in range(len(labels))]

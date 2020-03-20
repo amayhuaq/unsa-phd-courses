@@ -3,36 +3,63 @@ import pandas as pd
 import WesadDataManager as wdm
 import classifiers as clf
 
-RUNS = 1
+RUNS = 5
+
 set_features = [
+    { wdm.CHEST: [], wdm.WRIST: ['ACC']},
+    { wdm.CHEST: ['ACC'], wdm.WRIST: []},
+    { wdm.CHEST: [], wdm.WRIST: ['BVP']},
+    { wdm.CHEST: [], wdm.WRIST: ['EDA']},
+    { wdm.CHEST: [], wdm.WRIST: ['TEMP']},
+    { wdm.CHEST: [], wdm.WRIST: ['EDA', 'TEMP', 'BVP']},
+    { wdm.CHEST: ['ECG'], wdm.WRIST: []},
+    { wdm.CHEST: ['EDA'], wdm.WRIST: []},
+    { wdm.CHEST: ['EMG'], wdm.WRIST: []},
+    { wdm.CHEST: ['Resp'], wdm.WRIST: []},
+    { wdm.CHEST: ['Temp'], wdm.WRIST: []},
+    { wdm.CHEST: ['ECG', 'EDA', 'EMG', 'Resp', 'Temp'], wdm.WRIST: []},
+    { wdm.CHEST: [], wdm.WRIST: ['ACC', 'EDA', 'TEMP', 'BVP']},
+    { wdm.CHEST: ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp'], wdm.WRIST: []},
+    { wdm.CHEST: ['ECG', 'EDA', 'EMG', 'Resp', 'Temp'], wdm.WRIST: ['EDA', 'TEMP', 'BVP']},
     { wdm.CHEST: ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp'], wdm.WRIST: ['ACC', 'EDA', 'TEMP', 'BVP']}
 ]
 
 
 if __name__ == '__main__':
     db = wdm.WesadDataManager('WESAD')
+    features1 = db.prepare_joined_data(wdm.WRIST, 60, 0.25, binary=True)
+    features2 = db.prepare_joined_data(wdm.CHEST, 60, 0.25, binary=True)
+    features1 = features1.drop(columns=['subject', 'label'])
+    ids = {val : val + '_' + wdm.WRIST for val in features1.columns}
+    features1 = features1.rename(columns=ids)
+    ids = {val : val + '_' + wdm.CHEST for val in features2.columns}
+    features2 = features2.rename(columns=ids)
+    all_features = features1.join(features2)
+    
+    colSubName = 'subject_' + wdm.CHEST
+    colLabName = 'label_' + wdm.CHEST
+    
+    s = 0
     for sf in set_features:
+        if len(sf[wdm.WRIST]) == 0:
+            selCols = wdm.select_columns(features2.columns, sf[wdm.CHEST])
+        elif len(sf[wdm.CHEST]) == 0:
+            selCols = wdm.select_columns(features1.columns, sf[wdm.WRIST])
+        else:
+            selCols1 = wdm.select_columns(features1.columns, sf[wdm.WRIST])
+            selCols2 = wdm.select_columns(features2.columns, sf[wdm.CHEST])
+            selCols = selCols1 + selCols2
+        selCols.append(colSubName)
+        selCols.append(colLabName)
+        features = all_features[selCols]
+        print(features)
+        print(features.columns)
+        
         accuracies = {}
         df = None
         i = 0
+        
         while i < RUNS:
-            features1 = None
-            features2 = None
-            
-            if len(sf[wdm.WRIST]) > 0:
-                features1 = db.prepare_joined_data(wdm.WRIST, 60, 0.25, binary=True, lfeatures=sf[wdm.WRIST])
-            if len(sf[wdm.CHEST]) > 0:
-                features2 = db.prepare_joined_data(wdm.CHEST, 60, 0.25, binary=True, lfeatures=sf[wdm.CHEST])
-            
-            if features1 is None:
-                features = features2
-            elif features2 is None:
-                features = features1
-            else:
-                features = features1.join(features2)
-            print(features)
-            print(features.columns)
-            
             accuracies['dt'] = []
             accuracies['rf'] = []
             accuracies['ab'] = []
@@ -41,14 +68,14 @@ if __name__ == '__main__':
             
             # remove one subject
             for sid in wdm.list_subjects:
-                test_data = features[features['subject'] == 'S' + str(sid)]
-                train_data = features[features['subject'] != 'S' + str(sid)]
+                test_data = features[features[colSubName] == 'S' + str(sid)]
+                train_data = features[features[colSubName] != 'S' + str(sid)]
                 train_data = train_data.sample(frac=1).reset_index(drop=True)
                 # separating data and labels
-                ytrain = train_data['label'].tolist()
-                Xtrain = train_data.drop(columns=['subject', 'label']).values.tolist()    
-                ytest = test_data['label'].tolist()
-                Xtest = test_data.drop(columns=['subject', 'label']).values.tolist()
+                ytrain = train_data[colLabName].tolist()
+                Xtrain = train_data.drop(columns=[colSubName, colLabName]).values.tolist()    
+                ytest = test_data[colLabName].tolist()
+                Xtest = test_data.drop(columns=[colSubName, colLabName]).values.tolist()
                 # applying classifiers
                 acdt = clf.dt_classifier(Xtrain, ytrain, Xtest, ytest)
                 acrf = clf.rf_classifier(Xtrain, ytrain, Xtest, ytest)
@@ -62,12 +89,7 @@ if __name__ == '__main__':
                 accuracies['lda'].append(aclda)
                 accuracies['knn'].append(acknn)
             
-            tmp = pd.DataFrame(accuracies)
-            t = [i for k in range(len(wdm.list_subjects))]
-            tmp = tmp.join(pd.DataFrame({'time': t}))
-            if df is None:
-                df = tmp
-            else:
-                df = df.append(tmp, ignore_index = True)
+            df = pd.DataFrame(accuracies)
+            df.to_csv('../wesad_' + str(s) + '_' + str(i) + '.csv')
             i += 1
-        df.to_csv('../wesad_' + '-'.join(sf) + '.csv')
+        s += 1

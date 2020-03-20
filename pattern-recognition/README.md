@@ -1,5 +1,5 @@
 
-# Implementation of Stress Detectors based on Physiological Signals
+# Comparison of Stress Detectors based on Physiological Signals
 
 This repository contains the implementation of two papers related to stress detection which use the WESAD dataset.
 

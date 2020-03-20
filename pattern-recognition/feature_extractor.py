@@ -123,22 +123,22 @@ def get_ecg_features(signal, sample_size, window_size=1, shift=1):
     i = 0
     features = {
         'hr_mean': [], 'hr_std': [], 
-        'hrv_mean': [], 'hrv_std': [],
-        'sum_ulf': [], 'sum_lf':[], 'sum_hf':[], 'sum_uhf':[],
-        'pNN50': [], 'TINN': [], 'rms': [], 'LFHF': [],
-        'LFn': [], 'HFn': [], 
-        'rel': [], 'e_ulf': [], 'e_lf':[], 'e_hf':[], 'e_uhf':[]
+        'sum_ulf': [], 'sum_lf':[], 'sum_hf':[], 'sum_uhf':[]#,
+        #'hrv_mean': [], 'hrv_std': [],
+        #'pNN50': [], 'TINN': [], 'rms': [], 'LFHF': [],
+        #'LFn': [], 'HFn': [], 
+        #'rel': [], 'e_ulf': [], 'e_lf':[], 'e_hf':[], 'e_uhf':[]
     }
     signal = np.array(signal).flatten()
-    s_processed = nk.ecg_process(ecg=signal, sampling_rate=sample_size, filter_frequency=[3,30])
-    #print (s_processed)
-    #print (s_processed['df'].columns)
+    s_processed = nk.ecg_process(ecg=signal, sampling_rate=sample_size, filter_type=None)
     # Index(['ECG_Raw', 'ECG_Filtered', 'ECG_R_Peaks', 'Heart_Rate', 'ECG_Systole', 
     #   'ECG_Signal_Quality', 'ECG_RR_Interval', 'ECG_HRV_ULF', 'ECG_HRV_VLF',
     #   'ECG_HRV_LF', 'ECG_HRV_HF', 'ECG_HRV_VHF'],
     #  dtype='object')
     hr = s_processed['df']['Heart_Rate']
-    hrv = s_processed['ECG']['HRV']
+    #print(s_processed['ECG']['HRV'].keys())
+    #print(s_processed['ECG']['HRV']['RR_Intervals'])
+    #hrv = s_processed['ECG']['HRV']['RR_Intervals']
     
     window_size = int(sample_size * window_size)
     shift = int(sample_size * shift)
@@ -149,7 +149,7 @@ def get_ecg_features(signal, sample_size, window_size=1, shift=1):
         features['hr_mean'].append(m)
         features['hr_std'].append(s)
         
-        temp = s_processed['df']['ECG_HRV_ULF'][i: i + window_size]
+        temp = s_processed['df']['ECG_HRV_VLF'][i: i + window_size]
         features['sum_ulf'].append(np.sum(temp))
         temp = s_processed['df']['ECG_HRV_LF'][i: i + window_size]
         features['sum_lf'].append(np.sum(temp))
@@ -157,6 +157,8 @@ def get_ecg_features(signal, sample_size, window_size=1, shift=1):
         features['sum_hf'].append(np.sum(temp))
         temp = s_processed['df']['ECG_HRV_VHF'][i: i + window_size]
         features['sum_uhf'].append(np.sum(temp))
+        
+        """
         features['hrv_mean'].append(hrv['meanNN'])
         features['hrv_std'].append(hrv['sdNN'])
         features['pNN50'].append(hrv['pNN50'])
@@ -170,6 +172,7 @@ def get_ecg_features(signal, sample_size, window_size=1, shift=1):
         features['e_lf'].append(hrv['LF'])
         features['e_hf'].append(hrv['HF'])
         features['e_uhf'].append(hrv['VHF'])
+        """
         
         i += shift
 
