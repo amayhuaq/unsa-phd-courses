@@ -20,7 +20,7 @@ Be sure that these are assigned appropriately for your environment
 
 ### File Structure
 /
-- readme.md
+- README.md
 - WESAD/ - contains the files of the WESAD dataset
 - paper/ - contains the pdf file of our comparison between the previous papers
 - classifiers.py - contains the classifiers used by the papers (LDA, QDA, RF, DT, AB, kNN)
@@ -44,7 +44,9 @@ It is necessary that these dependencies are installed before executing some file
 ### Execution
 The execution of the paper-*.py files trains the classifiers and computes the accuracies for the different sensor combinations, storing the results in .csv files. The execution is done in the following way
 - Paper of Schmidt et al.
+
 ``python paper-schmidt.py``
 
 - Paper of Siirtola
+
 ``python paper-siirtola.py -r 2``
